@@ -1,0 +1,50 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<?xml-stylesheet type="text/xsl" href="./plugins.xsl" ?>
+<plugins>
+    <pyqgis_plugin name="Bdm Editor" version="[VERSION]" plugin_id="910">
+        <description><![CDATA[Bdm Edition Plugin]]></description>
+        <about>Editor : [ABOUT]</about>
+        <version>[VERSION]</version>
+        <qgis_minimum_version>2.0.0</qgis_minimum_version>
+        <qgis_maximum_version>2.20.5</qgis_maximum_version>
+        <homepage>[HOMEPAGE]</homepage>
+        <file_name>BdmEditor.[VERSION].zip</file_name>
+        <icon>/static/packages/survey.png</icon>
+        <author_name><![CDATA[M Van Asten (GIM)]]></author_name>
+        <download_url>[REPOSITORY][DOWNLOAD_DIR]/BdmEditor.[VERSION].zip</download_url>
+        <uploaded_by><![CDATA[[OPERATOR]]]></uploaded_by>
+        <create_date>2017-04-12T09:43:57</create_date>
+        <update_date>[UPD_DATETIME]</update_date>
+        <experimental>False</experimental>
+        <deprecated>False</deprecated>
+        <tracker><![CDATA[http:[REPOSITORY]]]></tracker>
+        <repository><![CDATA[http:[REPOSITORY]]]></repository>
+        <tags><![CDATA[database,workflow,vector]]></tags>
+        <downloads>1</downloads>
+        <average_vote>1</average_vote>
+        <rating_votes>10</rating_votes>
+    </pyqgis_plugin>
+	<pyqgis_plugin name="Bdm Admin" version="[VERSION]" plugin_id="911">
+        <description><![CDATA[Bdm Administration Plugin]]></description>
+        <about>Admin : [ABOUT]</about>
+        <version>[VERSION]</version>
+        <qgis_minimum_version>2.0.0</qgis_minimum_version>
+        <qgis_maximum_version>2.20.5</qgis_maximum_version>
+        <homepage>[HOMEPAGE]</homepage>
+        <file_name>BdmAdmin.[VERSION].zip</file_name>
+        <icon>/static/packages/survey.png</icon>
+        <author_name><![CDATA[M Van Asten (GIM)]]></author_name>
+        <download_url>http:[REPOSITORY][DOWNLOAD_DIR]/BdmAdmin.[VERSION].zip</download_url>
+        <uploaded_by><![CDATA[[OPERATOR]]]></uploaded_by>
+        <create_date>2017-04-12T09:43:57</create_date>
+        <update_date>[UPD_DATETIME]</update_date>
+        <experimental>False</experimental>
+        <deprecated>False</deprecated>
+        <tracker><![CDATA[http:[REPOSITORY]]]></tracker>
+        <repository><![CDATA[http:[REPOSITORY]]]></repository>
+        <tags><![CDATA[database,workflow,vector, administration]]></tags>
+        <downloads>1</downloads>
+        <average_vote>1</average_vote>
+        <rating_votes>10</rating_votes>
+    </pyqgis_plugin>
+</plugins>
