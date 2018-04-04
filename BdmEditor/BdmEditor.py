@@ -586,10 +586,11 @@ class BdmEditor(Stub):
             rowIndex = iIndex.row()
             layername = iIndex.sibling(rowIndex, 0).data()
             msg = self.getGeometryValid(layername, self._authKey)
-            if len(msg > 0):
+            if len(msg) > 0:
                 self.doNotify(msg)
                 return False
             else:
+                self.doNotify('Validation succeed')
                 return True
         else:
             return False    
