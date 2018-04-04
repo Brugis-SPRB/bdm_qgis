@@ -22,8 +22,10 @@
 """
 # from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, QObject
 import ConfigParser
-from __builtin__ import False
 import os.path
+import string
+import random
+
 
 from BdmEditor_dialog import BdmEditorDialog
 from BrugisWebStub import Stub
@@ -272,7 +274,7 @@ class BdmEditor(Stub):
         
         self.doDebugPrint("HERE")
         
-        authorized_version = [21803, 21811, 21813, 21816]
+        authorized_version = [21803, 21811, 21813, 21816, 21817, 21818]
         
         v = QGis.QGIS_VERSION_INT
         self.doDebugPrint(str(v))
@@ -285,6 +287,7 @@ class BdmEditor(Stub):
                 QObject.connect(self.dlg.pushButton_Staging, SIGNAL("clicked()"), self.doStaging)
                 QObject.connect(self.dlg.pushButton_UndoStaging, SIGNAL("clicked()"), self.doUndoStaging)
                 QObject.connect(self.dlg.pushButton_Free, SIGNAL("clicked()"), self.doCancel)
+                QObject.connect(self.dlg.pushButton_Validate, SIGNAL("clicked()"), self.doValidate)
                 QObject.connect(self._uiTimer, SIGNAL("timeout()"), self.doUIRefresh)
                 
                 
@@ -404,7 +407,6 @@ class BdmEditor(Stub):
     
         
         states = jdata[u'results']
-        # print states
         if len(states) == 0:
             return 
         model.setJson(states, expectedfields)
@@ -509,6 +511,7 @@ class BdmEditor(Stub):
         self.dlg.pushButton_Free.setDisabled(True)
         self.dlg.pushButton_Staging.setDisabled(True)
         self.dlg.pushButton_UndoStaging.setDisabled(True)
+        self.dlg.pushButton_Validate.setDisabled(True)
         view = self.dlg.tableView_editables_layers
         # retrieve selected line in the table... No selection means no action
         modelIndexList = view.selectedIndexes()
@@ -534,7 +537,7 @@ class BdmEditor(Stub):
                 if state == self._brugis_dataflow_cout:
                     self.dlg.pushButton_checkOut.setEnabled(True)
                     self.dlg.pushButton_Staging.setEnabled(True)
-                    
+                    self.dlg.pushButton_Validate.setEnabled(True)
                     if self.safeLen(statecrea) < 1:
                         self.dlg.pushButton_Free.setEnabled(True)                
                 elif state == self._brugis_dataflow_staging:
@@ -574,7 +577,23 @@ class BdmEditor(Stub):
         self.fillInTableStates()        
     
     
-    # #
+    def doValidate(self):
+        layername = 'undefined'
+        view = self.dlg.tableView_editables_layers
+        modelIndexList = view.selectedIndexes()
+        if len(modelIndexList) > 0:
+            iIndex = modelIndexList[0]                 
+            rowIndex = iIndex.row()
+            layername = iIndex.sibling(rowIndex, 0).data()
+            msg = self.getGeometryValid(layername, self._authKey)
+            if len(msg > 0):
+                self.doNotify(msg)
+                return False
+            else:
+                return True
+        else:
+            return False    
+        
     # doStaging : Layer is submitted to staging...  
     #
     def doStaging(self):
@@ -613,6 +632,16 @@ class BdmEditor(Stub):
                                "Action blocked by administrator")
             return
         
+        if not self.doValidate():
+            self.doBrugisEvent(layername, 
+                               self._authKey,  
+                               self.__brugis_useraction_STAGING, 
+                               state, 
+                               "BdmEditor", 
+                               "NOK", 
+                               "Invalid operation (Validation failure)")
+            return
+            
         self.doCopyTableEditToModif(layername)
         self.updateLayerStatus(layername, self._brugis_dataflow_staging, self._authKey)
         self.doBrugisEvent(layername, 
@@ -744,24 +773,44 @@ class BdmEditor(Stub):
             if layer.name() == easyname:
                 return
                 
-        uri = '{}{}/?SERVICE=WFS&VERSION=1.1.0&REQUEST=GetFeature&TYPENAME={}&SRSNAME=urn:ogc:def:crs:EPSG:31370'.format(self._brugisWfsProxy, self._authKey, fullname)
+        #uri = '{}{}/?SERVICE=WFS&VERSION=1.1.0&REQUEST=GetFeature&TYPENAME={}&SRSNAME=urn:ogc:def:crs:EPSG:31370'.format(self._brugisWfsProxy, self._authKey, fullname)
+        
+        #uri = '{}{}/?SERVICE=WFS&VERSION=1.0.0&TYPENAME={}&SRSNAME=urn:ogc:def:crs:EPSG:31370'.format(self._brugisWfsProxy, self._authKey, fullname)
+        
+        
+        #####################################Ê
+        ## add random part in the url to ensure cache is not used for getCapabilities...
+        uri = '{}{}/{}/?SERVICE=WFS&VERSION=1.0.0&TYPENAME={}&SRSNAME=urn:ogc:def:crs:EPSG:31370'.format(self._brugisWfsProxy, self._authKey, self.id_generator(), fullname)
+        
+        #uri = 'monhos?SERVICE=WFS&VERSION=1.0.0&TYPENAME=monnamespace:macouche&SRSNAME=urn:ogc:def:crs:EPSG:31370'.format(self._brugisWfsProxy, self._authKey, fullname)
+        
+        
         #uri = '{}{}/?SERVICE=WFS&REQUEST=GetFeature&TYPENAME={}&SRSNAME=EPSG:31370'.format(self._brugisWfsProxy, self._authKey, fullname)
        
         
         vlayer = QgsVectorLayer(uri, easyname, "WFS")
         
+        #####################################Ê
+        ## Just to ensure first getCapabilities call is done 
+        dp = vlayer.dataProvider()
+        dp.forceReload()          
+        dp.clearMinMaxCache()
+        cp = dp.capabilitiesString()
+        
         
         
         self.doHiddenField(vlayer, False)
         
-        # print vlayer
         reg = QgsMapLayerRegistry.instance()
         ml = reg.addMapLayer(vlayer, True)
         
         # check that ml is not null
         if ml is None:
             errmsg = self.getLastError(self._authKey)
-            self.doNotify("couche non disponible \n {}".format(errmsg))
+            try:
+                self.doNotify("couche non disponible \n {}".format(errmsg.decode('utf8')))
+            except:
+                self.doNotify("couche non disponible \n {}".format(layername))
             return 
         
         ml.editingStarted.connect(self.brugisLayerStartEditing)
@@ -839,7 +888,6 @@ class BdmEditor(Stub):
     # doCleanupSingleTable : Remove any reference to this specific Brugis layer
     #
     def doCleanupSingleTable(self, tablename):
-        self.doDebugPrint("doCleanupSingleTable")
         maplayers = QgsMapLayerRegistry.instance().mapLayers()        
         
         llist = []    
@@ -852,7 +900,9 @@ class BdmEditor(Stub):
                 llist.append(k)
         
         QgsMapLayerRegistry.instance().removeMapLayers(llist)        
-        self.doDebugPrint("after doCleanupSingleTable")
     
+    def id_generator(self,size=6, chars=string.ascii_uppercase + string.digits):
+        return ''.join(random.choice(chars) for _ in range(size))
+
    
     
