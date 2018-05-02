@@ -30,7 +30,7 @@ import random
 from BdmEditor_dialog import BdmEditorDialog
 from BrugisWebStub import Stub
 from PyQt4.QtCore import *
-from PyQt4.QtGui import QAction, QIcon, QAbstractItemView, QItemSelectionModel, QMessageBox, QMenu 
+from PyQt4.QtGui import QAction, QIcon, QAbstractItemView, QItemSelectionModel, QMessageBox, QMenu, QCursor, QApplication 
 from PyQt4.QtSql import *
 from PyQt4.QtXml import QDomDocument
 from QBrugisJsonTableModel import QBrugisJsonTableModel 
@@ -274,7 +274,7 @@ class BdmEditor(Stub):
         
         self.doDebugPrint("HERE")
         
-        authorized_version = [21803, 21811, 21813, 21816, 21817, 21818]
+        authorized_version = [21813, 21816, 21817, 21818]
         
         v = QGis.QGIS_VERSION_INT
         self.doDebugPrint(str(v))
@@ -393,6 +393,7 @@ class BdmEditor(Stub):
     #
     def fillInTableStates(self, username=None):
         # model = QSqlQueryModel()
+        #QApplication.setOverrideCursor(Qt.WaitCursor)
         model = QBrugisJsonTableModel()
         if username == None:
             view = self.dlg.tableView_editables_layers
@@ -410,6 +411,9 @@ class BdmEditor(Stub):
         if len(states) == 0:
             return 
         model.setJson(states, expectedfields)
+        
+        #QApplication.restoreOverrideCursor()
+        
         view = self.dlg.tableView_editables_layers
         view.setModel(model)
         view.setColumnWidth(0, 160)
@@ -424,7 +428,7 @@ class BdmEditor(Stub):
         selectionModel.selectionChanged.connect(self.doAjustUItoSelection)
         view.setSelectionBehavior(QAbstractItemView.SelectRows)
         view.show()
-    
+        
   
         
     # #
@@ -643,7 +647,7 @@ class BdmEditor(Stub):
                                "Invalid operation (Validation failure)")
             return
             
-        self.doCopyTableEditToModif(layername)
+        self.doCopyTableEditToModif(layername, self._authKey)
         self.updateLayerStatus(layername, self._brugis_dataflow_staging, self._authKey)
         self.doBrugisEvent(layername, 
                            self._authKey,  
@@ -655,10 +659,10 @@ class BdmEditor(Stub):
         self.doRefrehStatesTable()  
         self.doCleanupSingleTable(layername)  
         
-        self.removeGSLayer(self._authKey)    
-        usermail = self.getUserMail(self._authUser, self._authKey) 
-        self.sendMail("Notification Brugis", "Couche {} envoyee en staging pour validation dans les 24 heures. N'oubliez pas de demander ensuite la publication".format(layername) , usermail, self._authKey)
-        self.sendMail("Notification Brugis", "Couche {} envoyee en staging par {}".format(layername, self._authKey) , self._brugisEmailAdress)
+        self.removeGSLayer(layername,self._authKey)    
+        usermail = self.getUserMail(self._authKey) 
+        self.sendMail("Notification Bdm (Version:{})".format(self._myVersion), "Couche {} envoyee en staging pour validation dans les 24 heures. N'oubliez pas de demander ensuite la publication".format(layername) , usermail, self._authKey)
+        self.sendMail("Notification Bdm (Version:{})".format(self._myVersion), "Couche {} envoyee en staging par {}".format(layername, self._authUser) , self._brugisEmailAdress, self._authKey)
         self.doNotify("{} copied to staging".format(layername))
             
 
@@ -680,7 +684,7 @@ class BdmEditor(Stub):
             layername = iIndex.sibling(rowIndex, 0).data()
             state = self.getUserTableState(layername, self._authKey)
             if state != self._brugis_dataflow_staging:
-                self.doNotify("invalid operation (state <> STAGING)")
+                self.doNotify("invalid operation ({} <> STAGING) for layer {}".format(state,layername))
                 return  
             if self.doAskUser(u"Les données publiées seront supprimées de l'envirronement de validation", "Veuillez confirmer votre choix"):
                 self.doCopyTableModifToEdit(layername, self._authKey)
@@ -904,6 +908,10 @@ class BdmEditor(Stub):
     
     def id_generator(self,size=6, chars=string.ascii_uppercase + string.digits):
         return ''.join(random.choice(chars) for _ in range(size))
-
-   
     
+    
+def wait_cursor():
+    try:
+        QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
+    except:
+        pass

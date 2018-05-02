@@ -10,6 +10,7 @@ import json
 
 import requests
 import settings as CONF
+import platform
 
 from PyQt4.QtCore import *
 
@@ -59,7 +60,7 @@ class Stub(object):
     
    
     def getUserTableState(self, layername, authkey):
-        queryparams = "action={}&lname={}&key={}".format('U_A_STATE', layername, authkey)
+        queryparams = "action={}&lname={}&key={}".format('U_T_STATE', layername, authkey)
         return self.getWebFunction(queryparams)
  
     def getUserActivityState(self, uname, authkey):
@@ -69,6 +70,9 @@ class Stub(object):
     def getTableState(self, layername, authkey):
         queryparams = "action={}&lname={}&key={}".format('T_S_STATE', layername, authkey)
         return self.getWebFunction(queryparams)
+    
+    
+    
     
     def getTableStateCrea(self, layername, authkey):
         queryparams = "action={}&lname={}&key={}".format('T_S_STATECREA', layername, authkey)
@@ -110,17 +114,18 @@ class Stub(object):
         return self.doWebCommand(queryparams)
     
     def sendMail(self, subject, body, recipient, authkey):
-        queryparams = "action={}&mail_message={}&mail_recipient={}&key={}".format('GRANT', body, recipient, authkey)
+        queryparams = "action={}&mail_message={}&mail_recipient={}&mail_subject={}&key={}".format('SEND_MAIL', body, recipient, subject, authkey)
         return self.doWebCommand(queryparams)
 
     def doBrugisEvent(self, lname, authkey, action, state, context, res, info):
-        queryparams = "action={}&lname={}&key={}&trans={}&state={}&result={}&info={}".format('EVENT',
+        queryparams = "action={}&lname={}&key={}&trans={}&state={}&result={}&info={}&hname={}".format('EVENT',
                                                                                                       lname,
                                                                                                       authkey,
                                                                                                       action,
                                                                                                       state,
                                                                                                       res,
-                                                                                                      info)
+                                                                                                      info,
+                                                                                                      platform.node())
         return self.doWebCommand(queryparams)
 
     def tableModifDrop(self, layername, authkey):
@@ -181,6 +186,10 @@ class Stub(object):
             return 0
         else:
             return int(res)
+    
+    def getUserMail(self, authkey):
+        queryparams = "action={}&key={}".format('U_MAIL', authkey)
+        return self.getWebFunctionSingl(queryparams)
         
     def getLastError(self, authkey):
         queryparams = "action={}&key={}".format('LAST_ERROR', authkey)
@@ -256,6 +265,8 @@ class Stub(object):
         if(resp.ok):
             jData = json.loads(resp.content)
             return jData[self._jkeyFunction]
+        else:
+            return ''
 
         
     def getTokenFunction(self, queryparams):
@@ -300,10 +311,9 @@ class Stub(object):
             if str(ch) == "NULL":
                 return 0
             l = len(str(ch))
-            self.doDebugPrint("Safelen {}".format(l))
-            return len
+            return l
         except Exception, e :
-            self.doDebugPrint("Not a valid string {}".format(e))
+            self.doDebugPrint("SafeLen Not a valid string {}".format(self.toString(e)))
         return 0
 
     # #
@@ -323,3 +333,9 @@ class Stub(object):
             print debugmsg.decode('utf8')
         except:
             pass
+        
+    def toString(self,obj):
+        try:
+            return str(obj)
+        except:
+            return ''
