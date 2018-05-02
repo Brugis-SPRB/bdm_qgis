@@ -12,6 +12,7 @@ import requests
 from PyQt4.QtCore import *
 from warnings import catch_warnings
 import settings as CONF 
+import platform
 
 class Stub(object):
     '''
@@ -110,18 +111,19 @@ class Stub(object):
         queryparams = "action={}&key={}".format('REVOKE', authkey)
         return self.doAdminCommand(queryparams)
     
-    def send_mail(self, subject, body, recipient, authkey):
-        queryparams = "action={}&mail_message={}&mail_recipient={}&key={}".format('GRANT', body, recipient, authkey)
+    def sendMail(self, subject, body, recipient, authkey):
+        queryparams = "action={}&mail_message={}&mail_recipient={}&mail_subject={}&key={}".format('SEND_MAIL', body, recipient, subject, authkey)
         return self.doWebCommand(queryparams)
 
     def doBrugisEvent(self, lname, authkey, action, state, context, res, info):
-        queryparams = "action={}&lname={}&key={}&trans={}&state={}&result={}&info={}".format('EVENT',
+        queryparams = "action={}&lname={}&key={}&trans={}&state={}&result={}&info={}&hname={}".format('EVENT',
                                                                                                       lname,
                                                                                                       authkey,
                                                                                                       action,
                                                                                                       state,
                                                                                                       res,
-                                                                                                      info)
+                                                                                                      info,
+                                                                                                      platform.node())
         return self.doWebCommand(queryparams)
 
     # #
@@ -220,6 +222,10 @@ class Stub(object):
     def dogetUserLock(self, authkey):
         queryparams = "action={}&key={}".format('U_LOCK', authkey)
         return int(self.getWebFunctionSingl(queryparams))
+    
+    def getUserMail(self, uname, authkey):
+        queryparams = "action={}&uname={}&key={}".format('U_MAIL', uname, authkey)
+        return self.getWebFunctionSingl(queryparams)
     
     def getGeometryValid(self, layername, authkey):
         queryparams = "action={}&lname={}&key={}".format('IS_VALID', layername, authkey)
@@ -325,10 +331,9 @@ class Stub(object):
             if str(ch) == "NULL":
                 return 0
             l = len(str(ch))
-            self.doDebugPrint("Safelen {}".format(l))
-            return len
+            return l
         except Exception, e :
-            self.doDebugPrint("Not a valid string {}".format(e))
+            self.doDebugPrint("Safelen Not a valid string {}".format(e))
         return 0
 
     # #
